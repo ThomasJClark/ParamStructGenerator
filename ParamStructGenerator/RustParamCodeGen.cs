@@ -135,19 +135,19 @@ namespace ParamStructGenerator {
                 if (writeComments) returnValue += $"\t/// {field.Description?.Replace("\n", "")}\n";
                 if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
                 returnValue +=
-                    $"\tpub fn get_{field.InternalName}(&self) -> {fieldType} {{" + "\n" +
-                    $"\t\t&self.{bitfieldName} & ({size} << {bitOffset - 1})" + "\n" +
-                    "\t}" + "\n" +
-                    "" + "\n";
+                    $"\tpub fn get_{field.InternalName}(&self) -> {fieldType} {{\n" +
+                    $"\t\t&self.{bitfieldName} & ({size} << {bitOffset - 1})\n" +
+                    "\t}\n" +
+                    "\n";
                 if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
                 returnValue +=
-                    $"\tpub fn set_{field.InternalName}(&mut self, state: {fieldType}) {{" + "\n" +
-                      "\t\tif state != 0 {" + "\n" +
-                    $"\t\t\tlet val = (state << {bitOffset - 1}) & ({size} << {bitOffset - 1});" + "\n" +
-                    $"\t\t\tself.{bitfieldName} |= val" + "\n" +
-                      "\t\t} else {" + "\n" +
-                    $"\t\t\tself.{bitfieldName} &= !(state << {bitOffset - 1})" + "\n" +
-                      "\t\t}" + "\n" +
+                    $"\tpub fn set_{field.InternalName}(&mut self, state: {fieldType}) {{\n" +
+                      "\t\tif state != 0 {\n" +
+                    $"\t\t\tlet val = (state << {bitOffset - 1}) & ({size} << {bitOffset - 1});\n" +
+                    $"\t\t\tself.{bitfieldName} |= val\n" +
+                      "\t\t} else {\n" +
+                    $"\t\t\tself.{bitfieldName} &= !(state << {bitOffset - 1})\n" +
+                      "\t\t}\n" +
                       "\t}";
 
                 return returnValue;
@@ -156,19 +156,19 @@ namespace ParamStructGenerator {
             if (writeComments) returnValue += $"\t/// {field.Description?.Replace("\n", "")}\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
-                $"\tpub fn get_{field.InternalName}(&self) -> bool {{" + "\n" +
-                $"\t\t&self.{bitfieldName} & (1 << {bitOffset - 1}) != 0" + "\n" +
-                "\t}" + "\n" +
-                "" + "\n";
+                $"\tpub fn get_{field.InternalName}(&self) -> bool {{\n" +
+                $"\t\t&self.{bitfieldName} & (1 << {bitOffset - 1}) != 0\n" +
+                "\t}\n" +
+                "\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
-                $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{" + "\n" +
-                  "\t\tif state {" + "\n" +
-                $"\t\t\tself.{bitfieldName} |= (1 << {bitOffset - 1})" + "\n" +
-                  "\t\t} else {" + "\n" +
-                $"\t\t\tself.{bitfieldName} &= !(1 << {bitOffset - 1})" + "\n" +
-                  "\t\t}" + "\n" +
-                  "\t}" + "\n";
+                $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{\n" +
+                  "\t\tif state {\n" +
+                $"\t\t\tself.{bitfieldName} |= (1 << {bitOffset - 1})\n" +
+                  "\t\t} else {\n" +
+                $"\t\t\tself.{bitfieldName} &= !(1 << {bitOffset - 1})\n" +
+                  "\t\t}\n" +
+                  "\t}\n";
                 
                 return returnValue;
 
@@ -187,49 +187,49 @@ namespace ParamStructGenerator {
         }
         public string GenTraitHeader() {
             return "use std::ops::Deref;\n\n" +
-                "pub trait ParamType {" + "\n" +
-                "\tconst NAME: &'static str;" + "\n" +
-                "" + "\n" +
-                "\t// So you can query the type constant from an `impl ParamType`" + "\n" +
-                "\tfn name(&self) -> &'static str {" + "\n" +
-                "\t\tSelf::NAME" + "\n" +
-                "\t}" + "\n" +
-                "\tconst VERSION: u16;" + "\n" +
-                "\tfn version(&self) -> u16 {" + "\n" +
-                "\t\tSelf::VERSION" + "\n" +
-                "\t}" + "\n" +
-                "\t// etc..." + "\n" +
-                "}" + "\n" +
-                "" + "\n" +
-                "// Make a single generic wrapper for named params " + "\n" +
-                "pub struct ParamStruct<T: ParamType, const N: &'static str> {" + "\n" +
-                "\tdata: T" + "\n" +
-                "}" + "\n" +
-                "" + "\n" +
-                "// Add a Deref implementation so ParamStruct<T, N> derefs to T" + "\n" +
-                "impl<T: ParamType, const N: &'static str> Deref for ParamStruct<T, N> {" + "\n" +
-                "\ttype Target = T;" + "\n" +
-                "" + "\n" +
-                "\tfn deref(&self) -> &Self::Target {" + "\n" +
-                "\t\t&self.data" + "\n" +
-                "\t}" + "\n" +
-                "}" + "\n" +
-                "" + "\n" +
-                "pub trait Param {" + "\n" +
-                "\tconst NAME: &'static str;" + "\n" +
-                "\ttype ParamType: ParamType;" + "\n" +
-                "" + "\n" +
-                "\tfn name(&self) -> &'static str {" + "\n" +
-                "\t\tSelf::NAME" + "\n" +
-                "\t}" + "\n" +
-                "\tfn param_type_name(&self) -> &'static str where Self: ParamType {" + "\n" +
-                "\t\t<Self as ParamType>::NAME" + "\n" +
-                "\t}" + "\n" +
-                "}" + "\n" +
-                "" + "\n" +
-                "impl<T: ParamType, const N: &'static str> Param for ParamStruct<T,N> {" + "\n" +
-                "\tconst NAME: &'static str = N;" + "\n" +
-                "\ttype ParamType = T;" + "\n" +
+                "pub trait ParamType {\n" +
+                "\tconst NAME: &'static str;\n" +
+                "\n" +
+                "\t// So you can query the type constant from an `impl ParamType`\n" +
+                "\tfn name(&self) -> &'static str {\n" +
+                "\t\tSelf::NAME\n" +
+                "\t}\n" +
+                "\tconst VERSION: u16;\n" +
+                "\tfn version(&self) -> u16 {\n" +
+                "\t\tSelf::VERSION\n" +
+                "\t}\n" +
+                "\t// etc...\n" +
+                "}\n" +
+                "\n" +
+                "// Make a single generic wrapper for named params \n" +
+                "pub struct ParamStruct<T: ParamType, const N: &'static str> {\n" +
+                "\tdata: T\n" +
+                "}\n" +
+                "\n" +
+                "// Add a Deref implementation so ParamStruct<T, N> derefs to T\n" +
+                "impl<T: ParamType, const N: &'static str> Deref for ParamStruct<T, N> {\n" +
+                "\ttype Target = T;\n" +
+                "\n" +
+                "\tfn deref(&self) -> &Self::Target {\n" +
+                "\t\t&self.data\n" +
+                "\t}\n" +
+                "}\n" +
+                "\n" +
+                "pub trait Param {\n" +
+                "\tconst NAME: &'static str;\n" +
+                "\ttype ParamType: ParamType;\n" +
+                "\n" +
+                "\tfn name(&self) -> &'static str {\n" +
+                "\t\tSelf::NAME\n" +
+                "\t}\n" +
+                "\tfn param_type_name(&self) -> &'static str where Self: ParamType {\n" +
+                "\t\t<Self as ParamType>::NAME\n" +
+                "\t}\n" +
+                "}\n" +
+                "\n" +
+                "impl<T: ParamType, const N: &'static str> Param for ParamStruct<T,N> {\n" +
+                "\tconst NAME: &'static str = N;\n" +
+                "\ttype ParamType = T;\n" +
                 "}";
         }
 

@@ -222,9 +222,9 @@ namespace ParamStructGenerator {
                 "\tfn name(&self) -> &'static str {\n" +
                 "\t\tSelf::NAME\n" +
                 "\t}\n" +
-                "\tfn param_type_name(&self) -> &'static str where Self: ParamType {\n" +
-                "\t\t<Self as ParamType>::NAME\n" +
-                "\t}\n" +
+                // "\tfn param_type_name(&self) -> &'static str where Self: ParamType {\n" +
+                // "\t\t<Self as ParamType>::NAME\n" +
+                // "\t}\n" +
                 "}\n" +
                 "\n" +
                 "impl<T: ParamType, const N: &'static str> Param for ParamStruct<T,N> {\n" +

@@ -191,7 +191,7 @@ namespace ParamStructGenerator {
                 "\tconst NAME: &'static str;\n" +
                 "\n" +
                 "\t// So you can query the type constant from an `impl ParamType`\n" +
-                "\tfn name(&self) -> &'static str {\n" +
+                "\tfn param_type_name(&self) -> &'static str {\n" +
                 "\t\tSelf::NAME\n" +
                 "\t}\n" +
                 "\tconst VERSION: u16;\n" +

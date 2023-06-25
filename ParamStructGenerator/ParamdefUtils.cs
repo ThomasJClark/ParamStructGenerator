@@ -84,5 +84,31 @@ namespace ParamStructGenerator
                 return defType.ToString();
             }
         }
+        
+        public static string FieldTypeToRust(PARAMDEF.DefType defType, bool typedefs = false)
+        {
+            if (!typedefs)
+            {
+                switch (defType)
+                {
+                    case PARAMDEF.DefType.u8:
+                    case PARAMDEF.DefType.dummy8: return "u8";
+                    case PARAMDEF.DefType.s8: return "i8";
+                    case PARAMDEF.DefType.u16: return "u16";
+                    case PARAMDEF.DefType.s16: return "i16";
+                    case PARAMDEF.DefType.u32: return "u32";
+                    case PARAMDEF.DefType.s32: return "i32";
+                    case PARAMDEF.DefType.f32: return "f32";
+
+                    case PARAMDEF.DefType.fixstr: return "u8";
+                    case PARAMDEF.DefType.fixstrW: return "u16";
+                }
+                return "unknown_type";
+            }
+            else
+            {
+                return defType.ToString();
+            }
+        }
     }
 }

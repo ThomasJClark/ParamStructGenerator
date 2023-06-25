@@ -34,7 +34,7 @@ namespace ParamStructGenerator
             if (diagFolder.ShowDialog() != CommonFileDialogResult.Ok) { return; }
             string outputFolder = diagFolder.FileName;
 
-            LibraryGen gen = new LibraryGen() { CodeGen = new CppParamCodeGen() };
+            LibraryGen gen = new LibraryGen() { CodeGen = new RustParamCodeGen() };
             // CSingleHeaderGen gen = new CSingleHeaderGen() { CEMode = true };
             gen.GenerateCode(regulationPath, paramdefFolder, outputFolder);
         }

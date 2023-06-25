@@ -45,6 +45,11 @@ namespace ParamStructGenerator
                 Console.WriteLine("done");
             }
             WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/params" + CodeGen.FileExtension), CodeGen.GenCommonHeader("params", paramIncludes));
+
+            if (CodeGen is RustParamCodeGen rpCodeGen) {
+                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/traits/mod" + CodeGen.FileExtension), rpCodeGen.GenTraitHeader());
+                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/mod" + CodeGen.FileExtension), rpCodeGen.GenModHeader(paramIncludes));
+            }
         }
 
         public void WriteAllTextAndCreateDirs(string path, string text)

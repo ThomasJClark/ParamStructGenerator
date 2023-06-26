@@ -75,6 +75,7 @@ namespace ParamStructGenerator {
 
                 StringBuilder fieldBuilder = new StringBuilder();
                 fieldBuilder.Append($"\t");
+                string sanitizedName = SanitizeFieldName(field.InternalName);
 
                 if (ParamUtil.IsBitType(field.DisplayType) && field.BitSize > 0) {
                     string bitfieldName = $"Bitfield{bitfieldCounter}";
@@ -99,17 +100,17 @@ namespace ParamStructGenerator {
                     bitfieldCounter++;
                 }
                 else if (field.BitSize != -1) {
-                    fieldBuilder.Append($"pub {field.InternalName}:{fieldName}");
+                    fieldBuilder.Append($"pub {sanitizedName}:{fieldName}");
                     isZeroSize = true;
                 }
                 else if (ParamUtil.IsArrayType(field.DisplayType) && field.ArrayLength > 0)
-                    fieldBuilder.Append($"pub {field.InternalName}:[{fieldName};{field.ArrayLength}]");
+                    fieldBuilder.Append($"pub {sanitizedName}:[{fieldName};{field.ArrayLength}]");
                 else if (field.ArrayLength <= 0) {
-                    fieldBuilder.Append($"pub {field.InternalName}:{fieldName}");
+                    fieldBuilder.Append($"pub {sanitizedName}:{fieldName}");
                     isZeroSize = true;
                 }
                 else {
-                    fieldBuilder.Append($"pub {field.InternalName}:{fieldName}");
+                    fieldBuilder.Append($"pub {sanitizedName}:{fieldName}");
                 }
 
                 // Comment out the field if it has zero size
@@ -126,6 +127,12 @@ namespace ParamStructGenerator {
             
             return sb.ToString();
         }
+        private string SanitizeFieldName(string fieldInternalName) {
+            // can add more filters later.
+            if (fieldInternalName == "type") return "r#type";
+
+            return fieldInternalName;
+        }
         private string GetBitField(Field field, string bitfieldName, int bitOffset, bool writeComments) {
             string returnValue = string.Empty;
             if (field.BitSize != 1) {
@@ -137,18 +144,18 @@ namespace ParamStructGenerator {
                 if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
                 returnValue +=
                     $"\tpub fn get_{field.InternalName}(&self) -> {fieldType} {{\n" +
-                    $"\t\t&self.{bitfieldName} & (0x{maxVal:X} << {bitOffset})\n" +
+                    $"\t\t&self.{bitfieldName} & 0x{TruncateConst(maxVal << bitOffset, size):X}\n" +
                     "\t}\n" +
                     "\n";
-                if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
+                if (writeComments) returnValue += $"\t/// {bitfieldName} MAX: {maxVal}\n";
                 returnValue +=
                     $"\tpub fn set_{field.InternalName}(&mut self, state: {fieldType}) {{\n" +
                       "\t\tif state != 0 {\n" +
-                    $"\t\t\tlet val = (state << {bitOffset}) & (0x{maxVal:X} << {bitOffset});\n" +
-                    $"\t\t\tlet newVal = &self.{bitfieldName} & !(0x{maxVal:X} << {bitOffset}) | val;\n" +
+                    $"\t\t\tlet val = (state << {bitOffset}) & 0x{TruncateConst(maxVal << bitOffset, size):X};\n" +
+                    $"\t\t\tlet newVal = &self.{bitfieldName} & 0x{TruncateConst(~(maxVal << bitOffset), size):X} | val;\n" +
                     $"\t\t\tself.{bitfieldName} = newVal\n" +
                       "\t\t} else {\n" +
-                    $"\t\t\tself.{bitfieldName} &= !(0x{maxVal:X} << {bitOffset})\n" +
+                    $"\t\t\tself.{bitfieldName} &= 0x{TruncateConst(~(maxVal << bitOffset), size):X}\n" +
                       "\t\t}\n" +
                       "\t}";
 
@@ -159,21 +166,29 @@ namespace ParamStructGenerator {
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn get_{field.InternalName}(&self) -> bool {{\n" +
-                $"\t\t&self.{bitfieldName} & (1 << {bitOffset}) != 0\n" +
+                $"\t\t&self.{bitfieldName} & {1 << bitOffset} != 0\n" +
                 "\t}\n" +
                 "\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{\n" +
                   "\t\tif state {\n" +
-                $"\t\t\tself.{bitfieldName} |= (1 << {bitOffset})\n" +
+                $"\t\t\tself.{bitfieldName} |= {1 << bitOffset}\n" +
                   "\t\t} else {\n" +
-                $"\t\t\tself.{bitfieldName} &= !(1 << {bitOffset})\n" +
+                $"\t\t\tself.{bitfieldName} &= {~(1 << bitOffset)}\n" +
                   "\t\t}\n" +
                   "\t}\n";
                 
                 return returnValue;
 
+        }
+        private int TruncateConst(int i, int size) {
+            switch (size)
+            {
+                case 1: return i & 0xFF;
+                case 2: return i & 0xFFFF;
+                default: return i;
+            }
         }
 
         public string GenCommonHeader(string name, List<string> includeList) {

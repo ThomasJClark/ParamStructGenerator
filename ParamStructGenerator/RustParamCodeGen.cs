@@ -135,8 +135,8 @@ namespace ParamStructGenerator {
         }
         private string GetBitField(Field field, string bitfieldName, int bitOffset, bool writeComments) {
             string returnValue = string.Empty;
+            int size = ParamUtil.GetValueSize(field.DisplayType);
             if (field.BitSize != 1) {
-                int size = ParamUtil.GetValueSize(field.DisplayType);
                 string fieldType = ParamdefUtils.FieldTypeToRust(field.DisplayType);
                 int maxVal = (1 << field.BitSize) - 1;
 
@@ -166,16 +166,16 @@ namespace ParamStructGenerator {
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn get_{field.InternalName}(&self) -> bool {{\n" +
-                $"\t\t&self.{bitfieldName} & 0x{1 << bitOffset:X} != 0\n" +
+                $"\t\t&self.{bitfieldName} & 0x{TruncateConst(1 << bitOffset, size):X} != 0\n" +
                 "\t}\n" +
                 "\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{\n" +
                   "\t\tif state {\n" +
-                $"\t\t\tself.{bitfieldName} |= 0x{1 << bitOffset:X}\n" +
+                $"\t\t\tself.{bitfieldName} |= 0x{TruncateConst(1 << bitOffset, size):X}\n" +
                   "\t\t} else {\n" +
-                $"\t\t\tself.{bitfieldName} &= 0x{~(1 << bitOffset):X}\n" +
+                $"\t\t\tself.{bitfieldName} &= 0x{TruncateConst(~(1 << bitOffset), size):X}\n" +
                   "\t\t}\n" +
                   "\t}\n";
                 

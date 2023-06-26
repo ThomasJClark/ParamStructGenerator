@@ -82,7 +82,7 @@ namespace ParamStructGenerator {
                     int bitOffset = field.BitSize;
                     DefType bitType = field.DisplayType == DefType.dummy8 ? DefType.u8 : field.DisplayType;
                     int bitLimit = ParamUtil.GetBitLimit(bitType);
-                    bitfieldBuilder.Append(GetBitField(field,bitfieldName, bitOffset, writeComments));
+                    bitfieldBuilder.Append(GetBitField(field,bitfieldName, bitOffset - 1, writeComments));
 
 
                     for (; i < def.Fields.Count - 1; i++)
@@ -92,8 +92,8 @@ namespace ParamStructGenerator {
                         if (!ParamUtil.IsBitType(nextType) || nextField.BitSize == -1 || bitOffset + nextField.BitSize > bitLimit
                             || (nextType == DefType.dummy8 ? DefType.u8 : nextType) != bitType)
                             break;
-                        bitOffset += nextField.BitSize;
                         bitfieldBuilder.Append(GetBitField(nextField,bitfieldName, bitOffset, writeComments));
+                        bitOffset += nextField.BitSize;
                     }
 
                     bitfieldCounter++;
@@ -131,22 +131,24 @@ namespace ParamStructGenerator {
             if (field.BitSize != 1) {
                 int size = ParamUtil.GetValueSize(field.DisplayType);
                 string fieldType = ParamdefUtils.FieldTypeToRust(field.DisplayType);
+                int maxVal = (1 << field.BitSize) - 1;
 
                 if (writeComments) returnValue += $"\t/// {field.Description?.Replace("\n", "")}\n";
                 if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
                 returnValue +=
                     $"\tpub fn get_{field.InternalName}(&self) -> {fieldType} {{\n" +
-                    $"\t\t&self.{bitfieldName} & ({size} << {bitOffset - 1})\n" +
+                    $"\t\t&self.{bitfieldName} & (0x{maxVal:X} << {bitOffset})\n" +
                     "\t}\n" +
                     "\n";
                 if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
                 returnValue +=
                     $"\tpub fn set_{field.InternalName}(&mut self, state: {fieldType}) {{\n" +
                       "\t\tif state != 0 {\n" +
-                    $"\t\t\tlet val = (state << {bitOffset - 1}) & ({size} << {bitOffset - 1});\n" +
-                    $"\t\t\tself.{bitfieldName} |= val\n" +
+                    $"\t\t\tlet val = (state << {bitOffset}) & (0x{maxVal:X} << {bitOffset});\n" +
+                    $"\t\t\tlet newVal = &self.{bitfieldName} & !(0x{maxVal:X} << {bitOffset}) | val;\n" +
+                    $"\t\t\tself.{bitfieldName} = newVal\n" +
                       "\t\t} else {\n" +
-                    $"\t\t\tself.{bitfieldName} &= !(state << {bitOffset - 1})\n" +
+                    $"\t\t\tself.{bitfieldName} &= !(0x{maxVal:X} << {bitOffset})\n" +
                       "\t\t}\n" +
                       "\t}";
 
@@ -157,16 +159,16 @@ namespace ParamStructGenerator {
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn get_{field.InternalName}(&self) -> bool {{\n" +
-                $"\t\t&self.{bitfieldName} & (1 << {bitOffset - 1}) != 0\n" +
+                $"\t\t&self.{bitfieldName} & (1 << {bitOffset}) != 0\n" +
                 "\t}\n" +
                 "\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{\n" +
                   "\t\tif state {\n" +
-                $"\t\t\tself.{bitfieldName} |= (1 << {bitOffset - 1})\n" +
+                $"\t\t\tself.{bitfieldName} |= (1 << {bitOffset})\n" +
                   "\t\t} else {\n" +
-                $"\t\t\tself.{bitfieldName} &= !(1 << {bitOffset - 1})\n" +
+                $"\t\t\tself.{bitfieldName} &= !(1 << {bitOffset})\n" +
                   "\t\t}\n" +
                   "\t}\n";
                 

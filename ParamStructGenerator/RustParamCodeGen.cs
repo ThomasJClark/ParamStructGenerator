@@ -166,16 +166,16 @@ namespace ParamStructGenerator {
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn get_{field.InternalName}(&self) -> bool {{\n" +
-                $"\t\t&self.{bitfieldName} & {1 << bitOffset} != 0\n" +
+                $"\t\t&self.{bitfieldName} & 0x{1 << bitOffset:X} != 0\n" +
                 "\t}\n" +
                 "\n";
             if (writeComments) returnValue += $"\t/// {bitfieldName}\n";
             returnValue +=
                 $"\tpub fn set_{field.InternalName}(&mut self, state: bool) {{\n" +
                   "\t\tif state {\n" +
-                $"\t\t\tself.{bitfieldName} |= {1 << bitOffset}\n" +
+                $"\t\t\tself.{bitfieldName} |= 0x{1 << bitOffset:X}\n" +
                   "\t\t} else {\n" +
-                $"\t\t\tself.{bitfieldName} &= {~(1 << bitOffset)}\n" +
+                $"\t\t\tself.{bitfieldName} &= 0x{~(1 << bitOffset):X}\n" +
                   "\t\t}\n" +
                   "\t}\n";
                 

@@ -110,5 +110,14 @@ namespace ParamStructGenerator
                 return defType.ToString();
             }
         }
+        
+        public static int TruncateConst(int val, int size) {
+            switch (size)
+            {
+                case 1: return val & 0xFF;
+                case 2: return val & 0xFFFF;
+                default: return val;
+            }
+        }
     }
 }

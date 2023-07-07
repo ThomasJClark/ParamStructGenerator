@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SoulsFormats;
 using System.Security.Permissions;
 using static SoulsFormats.PARAMDEF;
+using static ParamStructGenerator.ParamdefUtils;
 
 namespace ParamStructGenerator {
     public class RustParamCodeGen : IParamCodeGen {
@@ -16,15 +17,18 @@ namespace ParamStructGenerator {
             StringBuilder sb = new StringBuilder();
 
             if (writeComments && MultiFile) sb.AppendLine("/* This file was automatically generated from regulation data. */");
+            sb.AppendLine("#![allow(non_snake_case)]");
+
             if (MultiFile) sb.AppendLine($@"use crate::param::traits::*;");
             sb.AppendLine();
             if (MultiFile) sb.AppendLine($@"include!(""defs/{param.ParamType}{FileExtension}"");");
             sb.AppendLine();
             if (writeComments) sb.AppendLine($@"/// Type: {param.ParamType}");
             sb.AppendLine();
-            sb.AppendLine($"pub type {name} = ParamStruct<{param.ParamType}, \"{name}\">;");
-            sb.AppendLine($"impl ParamType for {param.ParamType} {{");
-            sb.AppendLine($"\tconst NAME: &'static str = \"{param.ParamType}\";");
+            sb.AppendLine($"pub type {name} = ParamStruct<{param.ParamType}>;");
+            sb.AppendLine($"impl Param for ParamStruct<{param.ParamType}> {{");
+            sb.AppendLine($"\tconst NAME: &'static str = \"{name}\";");
+            sb.AppendLine($"\tconst TYPE_NAME: &'static str = \"{param.ParamType}\";");
             sb.AppendLine($"\tconst VERSION: u16 = {param.ParamdefDataVersion};");
             sb.AppendLine("}");
             sb.AppendLine();
@@ -182,14 +186,6 @@ namespace ParamStructGenerator {
                 return returnValue;
 
         }
-        private int TruncateConst(int i, int size) {
-            switch (size)
-            {
-                case 1: return i & 0xFF;
-                case 2: return i & 0xFFFF;
-                default: return i;
-            }
-        }
 
         public string GenCommonHeader(string name, List<string> includeList) {
             StringBuilder sb = new StringBuilder();
@@ -197,57 +193,50 @@ namespace ParamStructGenerator {
             sb.AppendLine();
             
             foreach (var header in includeList) {
-                sb.AppendLine($"include!(\"{header}.h\")");
+                sb.AppendLine($"include!(\"{header}.rs\")");
             }
 
             return sb.ToString();
         }
         public string GenTraitHeader() {
-            return "use std::ops::Deref;\n\n" +
-                "pub trait ParamType {\n" +
-                "\tconst NAME: &'static str;\n" +
-                "\n" +
-                "\t// So you can query the type constant from an `impl ParamType`\n" +
-                "\tfn param_type_name(&self) -> &'static str {\n" +
-                "\t\tSelf::NAME\n" +
-                "\t}\n" +
-                "\tconst VERSION: u16;\n" +
-                "\tfn version(&self) -> u16 {\n" +
-                "\t\tSelf::VERSION\n" +
-                "\t}\n" +
-                "\t// etc...\n" +
-                "}\n" +
-                "\n" +
+            return "use std::ops::{Deref, DerefMut};\n\n" +
                 "// Make a single generic wrapper for named params \n" +
-                "pub struct ParamStruct<T: ParamType, const N: &'static str> {\n" +
+                "pub struct ParamStruct<T> {\n" +
                 "\tdata: T\n" +
                 "}\n" +
                 "\n" +
-                "// Add a Deref implementation so ParamStruct<T, N> derefs to T\n" +
-                "impl<T: ParamType, const N: &'static str> Deref for ParamStruct<T, N> {\n" +
+                "// Add a Deref implementation so ParamStruct<T> derefs to T\n" +
+                "impl<T> Deref for ParamStruct<T> {\n" +
                 "\ttype Target = T;\n" +
                 "\n" +
                 "\tfn deref(&self) -> &Self::Target {\n" +
                 "\t\t&self.data\n" +
                 "\t}\n" +
                 "}\n" +
+                "impl<T> DerefMut for ParamStruct<T> {" +
+                "\tfn deref_mut(&mut self) -> &mut Self::Target {" +
+                "\t\t&mut self.data" +
+                "\t}" +
+                "}" +
                 "\n" +
                 "pub trait Param {\n" +
                 "\tconst NAME: &'static str;\n" +
-                "\ttype ParamType: ParamType;\n" +
+                "\tconst TYPE_NAME: &'static str;\n" +
+                "\tconst VERSION: u16;\n" +
                 "\n" +
-                "\tfn name(&self) -> &'static str {\n" +
+                "\tfn name() -> &'static str {\n" +
                 "\t\tSelf::NAME\n" +
-                "\t}\n" +
-                // "\tfn param_type_name(&self) -> &'static str where Self: ParamType {\n" +
-                // "\t\t<Self as ParamType>::NAME\n" +
-                // "\t}\n" +
                 "}\n" +
-                "\n" +
-                "impl<T: ParamType, const N: &'static str> Param for ParamStruct<T,N> {\n" +
-                "\tconst NAME: &'static str = N;\n" +
-                "\ttype ParamType = T;\n" +
-                "}";
+                "\t// So you can query the type constant from an `impl Param`\n" +
+                "\tfn param_type_name() -> &'static str {\n" +
+                "\t\tSelf::TYPE_NAME\n" +
+                "\t}\n" +
+                "\tfn version() -> u16 {\n" +
+                "\t\tSelf::VERSION\n" +
+                "\t}\n" +
+                "\t// etc...\n" +
+                "\t}\n" +
+                "\n";
         }
 
         public string GenModHeader(List<string> includeList) {
@@ -257,6 +246,7 @@ pub mod traits;
 ");
             foreach (var header in includeList)
             {
+                sb.AppendLine($"#[cfg(feature = \"{header}\")]");
                 sb.AppendLine($"pub mod {header};");
             }
 

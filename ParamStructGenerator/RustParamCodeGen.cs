@@ -18,6 +18,7 @@ namespace ParamStructGenerator {
 
             if (writeComments && MultiFile) sb.AppendLine("/* This file was automatically generated from regulation data. */");
             sb.AppendLine("#![allow(non_snake_case)]");
+            if (name.Contains("_")) sb.AppendLine("#![allow(non_camel_case_types)]");
 
             if (MultiFile) sb.AppendLine($@"use crate::param::traits::*;");
             sb.AppendLine();

@@ -15,26 +15,14 @@ namespace ParamStructGenerator
         [STAThread]
         static void Main(string[] args)
         {
-            var diagFolder = new CommonOpenFileDialog()
-            {
-                Title = "Select paramdefs directory",
-                IsFolderPicker = true,
-                InitialDirectory = Environment.CurrentDirectory
-            };
-            if (diagFolder.ShowDialog() != CommonFileDialogResult.Ok) { return; }
-            string paramdefFolder = diagFolder.FileName;
+            string paramdefFolder = Path.GetFullPath(
+                @"..\Erd-Tools\Documentation\Params\Defs-English"
+            );
+            string regulationPath =
+                @"C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING\Game\regulation.bin";
+            string outputFolder = Path.GetFullPath(@"..\libER\include\param");
 
-            diagFolder.IsFolderPicker = false;
-            diagFolder.Title = "Select game regulation file";
-            if (diagFolder.ShowDialog() != CommonFileDialogResult.Ok) { return; }
-            string regulationPath = diagFolder.FileName;
-
-            diagFolder.IsFolderPicker = true;
-            diagFolder.Title = "Select output directory";
-            if (diagFolder.ShowDialog() != CommonFileDialogResult.Ok) { return; }
-            string outputFolder = diagFolder.FileName;
-
-            LibraryGen gen = new LibraryGen() { CodeGen = new RustParamCodeGen() };
+            LibraryGen gen = new LibraryGen() { CodeGen = new CppParamCodeGen() };
             // CSingleHeaderGen gen = new CSingleHeaderGen() { CEMode = true };
             gen.GenerateCode(regulationPath, paramdefFolder, outputFolder);
         }

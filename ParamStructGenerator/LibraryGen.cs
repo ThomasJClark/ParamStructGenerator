@@ -14,6 +14,16 @@ namespace ParamStructGenerator
 
         public void GenerateCode(string regulationPath, string paramdefFolder, string outputFolder)
         {
+            var detectedSizeByParamType = new Dictionary<string, long>();
+
+            BND4 archive = SFUtil.DecryptERRegulation(regulationPath);
+            foreach (var file in from f in archive.Files where f.Name.EndsWith(".param") select f)
+            {
+                PARAM param = PARAM.Read(file.Bytes);
+                if (!detectedSizeByParamType.ContainsKey(param.ParamType))
+                    detectedSizeByParamType.Add(param.ParamType, param.DetectedSize);
+            }
+
             var paramdefIncludes = new List<string>();
             string outFile;
 
@@ -24,32 +34,20 @@ namespace ParamStructGenerator
 
                 paramdefIncludes.Add(def.ParamType);
 
+                long detectedSize = -1;
+                detectedSizeByParamType.TryGetValue(def.ParamType, out detectedSize);
+
                 Console.Write($"Generating paramdef {def.ParamType}... ");
-                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, $"param/defs/{def.ParamType}{CodeGen.FileExtension}"), CodeGen.GenParamdefCode(def, true));
+                WriteAllTextAndCreateDirs(
+                    Path.Combine(outputFolder, $@"paramdef\{def.ParamType}{CodeGen.FileExtension}"),
+                    CodeGen.GenParamdefCode(def, false, detectedSize)
+                );
                 Console.WriteLine("done");
             }
-            WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/defs/defs" + CodeGen.FileExtension), CodeGen.GenCommonHeader("defs", paramdefIncludes));
-
-            BND4 archive = SFUtil.DecryptERRegulation(regulationPath);
-            var paramIncludes = new List<string>();
-
-            foreach (var file in from f in archive.Files where f.Name.EndsWith(".param") select f)
-            {
-                string paramName = Path.GetFileNameWithoutExtension(file.Name);
-
-                Console.Write($"Generating param {paramName}... ");
-                paramIncludes.Add(paramName);
-
-                PARAM param = PARAM.Read(file.Bytes);
-                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, $"param/{paramName}{CodeGen.FileExtension}"), CodeGen.GenParamCode(param, paramName, true));
-                Console.WriteLine("done");
-            }
-            WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/params" + CodeGen.FileExtension), CodeGen.GenCommonHeader("params", paramIncludes));
-
-            if (CodeGen is RustParamCodeGen rpCodeGen) {
-                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/traits/mod" + CodeGen.FileExtension), rpCodeGen.GenTraitHeader());
-                WriteAllTextAndCreateDirs(Path.Combine(outputFolder, "param/mod" + CodeGen.FileExtension), rpCodeGen.GenModHeader(paramIncludes));
-            }
+            WriteAllTextAndCreateDirs(
+                Path.Combine(outputFolder, $@"detail\paramdef{CodeGen.FileExtension}"),
+                CodeGen.GenCommonHeader("defs", paramdefIncludes)
+            );
         }
 
         public void WriteAllTextAndCreateDirs(string path, string text)

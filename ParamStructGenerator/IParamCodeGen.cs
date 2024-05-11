@@ -14,7 +14,7 @@ namespace ParamStructGenerator
 
         string GenParamCode(PARAM param, string name, bool writeComments);
 
-        string GenParamdefCode(PARAMDEF def, bool writeComments);
+        string GenParamdefCode(PARAMDEF def, bool writeComments, long detectedSize);
 
         string GenCommonHeader(string name, List<string> includeList);
     }

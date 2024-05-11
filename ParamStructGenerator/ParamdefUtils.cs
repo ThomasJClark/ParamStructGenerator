@@ -66,12 +66,12 @@ namespace ParamStructGenerator
                 switch (defType)
                 {
                     case PARAMDEF.DefType.u8:
-                    case PARAMDEF.DefType.dummy8: return "uint8_t";
-                    case PARAMDEF.DefType.s8: return "int8_t";
-                    case PARAMDEF.DefType.u16: return "uint16_t";
-                    case PARAMDEF.DefType.s16: return "int16_t";
-                    case PARAMDEF.DefType.u32: return "uint32_t";
-                    case PARAMDEF.DefType.s32: return "int32_t";
+                    case PARAMDEF.DefType.dummy8: return "unsigned char";
+                    case PARAMDEF.DefType.s8: return "signed char";
+                    case PARAMDEF.DefType.u16: return "unsigned short";
+                    case PARAMDEF.DefType.s16: return "short";
+                    case PARAMDEF.DefType.u32: return "unsigned int";
+                    case PARAMDEF.DefType.s32: return "int";
                     case PARAMDEF.DefType.f32: return "float";
 
                     case PARAMDEF.DefType.fixstr: return "char";

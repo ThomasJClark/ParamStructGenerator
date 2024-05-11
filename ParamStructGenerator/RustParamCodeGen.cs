@@ -46,7 +46,7 @@ namespace ParamStructGenerator {
             return sb.ToString();
         }
 
-        public string GenParamdefCode(PARAMDEF def, bool writeComments) {
+        public string GenParamdefCode(PARAMDEF def, bool writeComments, long expectedSize) {
             StringBuilder sb = new StringBuilder();
 
             if (writeComments && MultiFile) sb.AppendLine("/* This file was automatically generated from XML paramdefs. */");

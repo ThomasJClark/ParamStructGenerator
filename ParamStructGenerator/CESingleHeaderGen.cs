@@ -73,7 +73,7 @@ typedef unsigned char dummy8;
             foreach (PARAMDEF def in defs)
             {
                 Console.Write($"Generating paramdef {def.ParamType}... ");
-                header.AppendLine(CodeGen.GenParamdefCode(def, false));
+                header.AppendLine(CodeGen.GenParamdefCode(def, false, -1));
                 Console.WriteLine("done");
             }
 

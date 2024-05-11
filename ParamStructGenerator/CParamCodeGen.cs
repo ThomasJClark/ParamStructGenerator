@@ -28,7 +28,7 @@ namespace ParamStructGenerator
             return sb.ToString();
         }
 
-        public string GenParamdefCode(PARAMDEF def, bool writeComments)
+        public string GenParamdefCode(PARAMDEF def, bool writeComments, long expectedSize)
         {
             StringBuilder sb = new StringBuilder();
 

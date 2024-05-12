@@ -149,8 +149,18 @@ namespace ParamStructGenerator
                         else
                             fieldBuilder.Append(" { false }");
                     }
+                    else if (fieldTypeName == "float")
+                    {
+                        string defaultStr = $"{field.Default}";
+                        if (defaultStr.Contains("."))
+                            fieldBuilder.Append($" {{ {defaultStr}f }}");
+                        else
+                            fieldBuilder.Append($" {{ {defaultStr}.0f }}");
+                    }
                     else
+                    {
                         fieldBuilder.Append($" {{ {field.Default} }}");
+                    }
                 }
 
                 // Comment out the field if it has zero size
